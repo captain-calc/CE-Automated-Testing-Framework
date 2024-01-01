@@ -4,7 +4,8 @@ The CE Automated Testing Framework is a Python script and a few files that can b
 
 It only supports C++ projects at present, but support for C projects should be easy to add.
 
-If you want to try it out, clone this repository and treat it like a CE-Programming SDK template.
+If you want to try it out, clone this repository and treat it like a CE-Programming SDK template. You must provide your own TI-84 Plus CE ROM with the C libraries pre-installed to the script in order for it to work. Put the relative path to your ROM file in the `TESTING_ROM_ABSOLUTE_PATH` variable defined at the top of `runtests.py`.
+
 
 ## Project Structure
 
