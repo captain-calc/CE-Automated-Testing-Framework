@@ -4,6 +4,9 @@ import subprocess
 from typing import Any, Optional, Union
 
 
+VERSION: str = "0.0.2"
+
+
 SOURCE_DIRECTORY_NAME: str = "src"
 TESTING_ROM_ABSOLUTE_PATH: str = os.path.abspath("testing_rom.rom")
 ABSOLUTE_PATH_TO_ROOT_TEST_DIRECTORY: str = os.path.abspath("tests")
@@ -15,8 +18,8 @@ AUTOTEST_JSON_FILENAME: str = "autotest.json"
 TERMINAL_LINE_WIDTH: int = 80
 CLEAN_THEN_BUILD_TESTS: bool = False
 ABORT_ON_FIRST_FAILED_TEST: bool = False
-PRINT_DEPENDENCY_TRACE_INFO: bool = True
-PRINT_BATCHES: bool = False
+PRINT_DEPENDENCY_TRACE_INFO: bool = False
+PRINT_BATCH_BUILDING: bool = False
 
 
 class IgnoredFunctions:
@@ -295,7 +298,7 @@ def extract_all_functions_from_object_file(
                     except ValueError:
                         function_name_start = line.rindex(b"\t") + 1
 
-                    line = line[function_name_start: ]
+                    line = line[function_name_start:]
                     mangled_function_name: str = line.decode()
 
                     if mangled_function_name not in functions[-1]["dependencies"]:
@@ -418,8 +421,8 @@ def trace_dependencies_for_test(
         for file in filenames:
             if file.endswith(".cpp.src"):
                 linked_functions += extract_all_functions_from_object_file(
-                        os.path.join(dirpath, file)
-                    )
+                    os.path.join(dirpath, file)
+                )
 
     if PRINT_DEPENDENCY_TRACE_INFO == True:
         print_empty_line()
@@ -506,7 +509,7 @@ def update_test_info_json(absolute_test_directory_path: str) -> None:
     ]
 
     if len(targeted_but_unused_functions) > 0:
-        report_fatal_error_then_exit(
+        report_warning(
             "Test does not have all of the functions it claims to evaluate.",
             [
                 "Update the test with code to evaluate the missing functions, or",
@@ -656,27 +659,59 @@ class TestBatcher:
         return
 
     def _batch_test_as_unfulfilled(self, test: dict[str, (str | list[str])]) -> None:
+        if PRINT_BATCH_BUILDING:
+            print("Unfulfilled test added:", test["path"])
+
         self._unfulfilled_batch.append(test)
         return
 
     def _evaluate_unfulfilled_batch(
         self,
-        latest_test_added: dict[str, (str, list[str])],
-        batch_number_of_added_test: int,
+        added_tests: list[dict[str, (str, list[str])]],
+        batch_number_of_added_tests: int,
     ) -> None:
-        unfulfilled_batch: list[dict[str, (str | list[str])]] = self._unfulfilled_batch.copy()
+        next_set_of_added_tests: list[dict[str, (str, list[str])]] = []
+
+        if PRINT_BATCH_BUILDING:
+            for test in added_tests:
+                print(
+                    ("  " * batch_number_of_added_tests) + "Added test:", test["path"]
+                )
+
+        for added_test in added_tests:
+            for test in self._unfulfilled_batch:
+                if len(test["dependencies"]) == 0:
+                    continue
+
+                test["dependencies"] = list(
+                    set(test["dependencies"]) - set(added_test["targets"])
+                )
+
+                if len(test["dependencies"]) == 0:
+                    if PRINT_BATCH_BUILDING:
+                        print(
+                            ("  " * batch_number_of_added_tests) + "Added:",
+                            test["path"],
+                        )
+
+                    next_set_of_added_tests.append(test)
+                    self._batch_test(test, batch_number_of_added_tests + 1)
+
+        unfulfilled_batch: list[
+            dict[str, (str, list[str])]
+        ] = self._unfulfilled_batch.copy()
 
         for test in self._unfulfilled_batch:
-            test["dependencies"] = list(
-                set(test["dependencies"]) - set(latest_test_added["targets"])
-            )
-
             if len(test["dependencies"]) == 0:
-                self._batch_test(test, batch_number_of_added_test + 1)
                 unfulfilled_batch.remove(test)
-                return
 
         self._unfulfilled_batch = unfulfilled_batch
+
+        if len(next_set_of_added_tests) > 0:
+            self._evaluate_unfulfilled_batch(
+                next_set_of_added_tests, batch_number_of_added_tests + 1
+            )
+
         return
 
     def _assign_test_to_batch(self, absolute_test_directory_path: str) -> None:
@@ -714,7 +749,7 @@ class TestBatcher:
             self._batch_test_as_unfulfilled(test)
         else:
             self._batch_test(test, batch_number)
-            self._evaluate_unfulfilled_batch(test, batch_number)
+            self._evaluate_unfulfilled_batch([test], batch_number)
         return
 
     def _batch_tests_in_directory(self, absolute_directory_path: str) -> None:
@@ -750,11 +785,15 @@ class TestBatcher:
             if len(set(test["dependencies"]) - set(total_targets)) > 0:
                 total_targets = list(set(total_targets) - set(test["dependencies"]))
 
-        unfulfilled_batch: list[dict[str, (str | list[str])]] = self._unfulfilled_batch.copy()
+        unfulfilled_batch: list[
+            dict[str, (str | list[str])]
+        ] = self._unfulfilled_batch.copy()
         final_batch_number: int = len(self._batches)
 
         for test in self._unfulfilled_batch:
-            test_identifier: str = get_test_identifier(ABSOLUTE_PATH_TO_ROOT_TEST_DIRECTORY, test["path"])
+            test_identifier: str = get_test_identifier(
+                ABSOLUTE_PATH_TO_ROOT_TEST_DIRECTORY, test["path"]
+            )
             count: int = 1
 
             if len(set(test["dependencies"]) - set(total_targets)) == 0:
@@ -776,13 +815,15 @@ class TestBatcher:
 
         self._unfulfilled_batch = unfulfilled_batch
 
-        if PRINT_BATCHES:
+        if PRINT_BATCH_BUILDING:
             print_empty_line()
 
             for index, batch in enumerate(self._batches):
                 print(f"Batch {index + 1}:")
                 for test in batch:
-                    test_identifier: str = get_test_identifier(ABSOLUTE_PATH_TO_ROOT_TEST_DIRECTORY, test["path"])
+                    test_identifier: str = get_test_identifier(
+                        ABSOLUTE_PATH_TO_ROOT_TEST_DIRECTORY, test["path"]
+                    )
                     print("  " + test_identifier)
 
                 print_empty_line()
@@ -790,7 +831,9 @@ class TestBatcher:
             print("Unfulfilled Batch:")
 
             for test in self._unfulfilled_batch:
-                test_identifier: str = get_test_identifier(ABSOLUTE_PATH_TO_ROOT_TEST_DIRECTORY, test["path"])
+                test_identifier: str = get_test_identifier(
+                    ABSOLUTE_PATH_TO_ROOT_TEST_DIRECTORY, test["path"]
+                )
                 print("  " + test_identifier)
 
         if len(self._unfulfilled_batch) == 0:
@@ -799,7 +842,8 @@ class TestBatcher:
         report_fatal_error_then_exit(
             "Some tests have untested dependencies.",
             [
-                "Review the list of tests above and add tests whose targets evaluate the dependency functions listed."
+                "Review the list of tests above and add tests whose targets evaluate the dependency functions listed.",
+                "Make sure that the targets of your existing tests have the correct function signatures.",
             ],
         )
         return
