@@ -1,0 +1,49 @@
+{
+  "transfer_files": [
+    "bin/TEST.8xp"
+  ],
+  "target": {
+    "name": "TEST",
+    "isASM": true
+  },
+  "sequence": [
+    "action|launch",
+    "delay|500",
+    "hashWait|1",
+    "key|enter",
+    "delay|500",
+    "hashWait|2",
+    "key|enter",
+    "hashWait|3"
+  ],
+  "hashes": {
+    "1": {
+      "description": "Test program start",
+      "start": "vram_start",
+      "size": "vram_16_size",
+      "expected_CRCs": [
+        "D1C0C377"
+      ]
+    },
+    "2": {
+      "description": "Test for pass",
+      "start": "vram_start",
+      "size": "vram_16_size",
+      "expected_CRCs": [
+        "C2DF8E65"
+      ]
+    },
+    "3": {
+      "description": "Test program exit",
+      "start": "vram_start",
+      "size": "vram_16_size",
+      "expected_CRCs": [
+        "FFAF89BA",
+        "101734A5",
+        "9DA19F44",
+        "A32840C8",
+        "349F4775"
+      ]
+    }
+  }
+}

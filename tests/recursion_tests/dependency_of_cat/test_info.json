@@ -1,0 +1,9 @@
+{
+  "targets": [
+    "dependency_of_cat(char*)"
+  ],
+  "used": [
+    "dependency_of_cat(char*)"
+  ],
+  "dependencies": []
+}

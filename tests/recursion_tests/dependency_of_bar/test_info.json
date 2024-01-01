@@ -1,0 +1,9 @@
+{
+  "targets": [
+    "dependency_of_bar(char*)"
+  ],
+  "used": [
+    "dependency_of_bar(char*)"
+  ],
+  "dependencies": []
+}

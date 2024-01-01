@@ -1,0 +1,12 @@
+[
+  "__frameset",
+  "__frameset0",
+  "_strcat",
+  "_strcmp",
+  "_strlen",
+  "_strncmp",
+  "_strspn",
+  "static_function(char*)",
+  "testutil_PrintTestResults(bool)",
+  "testutil_PrintTestSetup()"
+]

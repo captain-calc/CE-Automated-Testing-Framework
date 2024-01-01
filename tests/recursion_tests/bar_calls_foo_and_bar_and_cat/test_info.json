@@ -1,0 +1,15 @@
+{
+  "targets": [
+    "bar_calls_foo_and_bar_and_cat(char*)"
+  ],
+  "used": [
+    "bar_calls_foo_and_bar_and_cat(char*)"
+  ],
+  "dependencies": [
+    "dependency_of_bar(char*)",
+    "dependency_of_foo(char*)",
+    "cat_calls_foo_and_bar_and_cat(char*)",
+    "foo_calls_foo_and_bar_and_cat(char*)",
+    "dependency_of_cat(char*)"
+  ]
+}
