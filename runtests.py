@@ -1,32 +1,3 @@
-# Calculator Project Structure Required to Use runtests.py Program.
-#
-# runtests.py
-# bin/
-# obj/
-# src/
-# tests/
-#   ignored_functions.json
-#   group_of_related_tests/
-#     test_1/
-#       bin/
-#       obj/
-#       src/
-#       autotest.json
-#       makefile
-#       test_info.json
-#     test_2/
-#     ...
-#   test_1/
-#     bin/
-#     obj/
-#     src/
-#     autotest.json
-#       makefile
-#       test_info.json
-#   test_2/
-#   ...
-
-
 import json
 import os
 import subprocess
